@@ -90,3 +90,7 @@ Murendeni-Construction-Architects/
 ├── Prototype/
 │
 └── README.md
+
+# Admin login details are as follows:
+ admin@murendeni.co.za
+ password: Passw0rd!
