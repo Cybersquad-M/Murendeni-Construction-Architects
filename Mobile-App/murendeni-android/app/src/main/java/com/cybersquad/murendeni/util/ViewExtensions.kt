@@ -25,3 +25,14 @@ fun View.applySystemBarPadding() {
         insets
     }
 }
+// Adds padding at the top only, so content stays below the status bar.
+// Used where the bottom edge is already handled by the bottom navigation bar.
+fun View.applyTopSystemBarPadding() {
+    val startTop = paddingTop
+
+    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+        val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        view.setPadding(view.paddingLeft, startTop + bars.top, view.paddingRight, view.paddingBottom)
+        insets
+    }
+}

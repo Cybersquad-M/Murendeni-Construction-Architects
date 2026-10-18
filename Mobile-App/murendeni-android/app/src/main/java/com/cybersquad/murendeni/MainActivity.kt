@@ -1,13 +1,13 @@
 package com.cybersquad.murendeni
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.cybersquad.murendeni.data.SessionManager
 import com.cybersquad.murendeni.databinding.ActivityMainBinding
-import com.cybersquad.murendeni.util.applySystemBarPadding
+import com.cybersquad.murendeni.util.applyTopSystemBarPadding
 
-// Temporary home screen. It shows who is logged in and lets the user log out.
+// Holds the bottom tab bar and shows the screen for the selected tab.
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -17,16 +17,36 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.root.applySystemBarPadding()
+
+        // Keeps the content below the status bar. The tab bar handles the bottom edge itself.
+        binding.fragmentContainer.applyTopSystemBarPadding()
 
         val session = SessionManager(this)
-        binding.tvWelcome.text = "Welcome, ${session.getName()}"
-        binding.tvRole.text = "Signed in as ${session.getRole()}"
 
-        binding.btnLogout.setOnClickListener {
-            session.clear()
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
+        // Only clients can send inquiries, so staff do not get that tab.
+        if (session.getRole() != "Client") {
+            binding.bottomNav.menu.findItem(R.id.nav_inquiries).isVisible = false
         }
+
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_projects -> showFragment(ProjectsFragment())
+                R.id.nav_inquiries -> showFragment(InquiriesFragment())
+                R.id.nav_settings -> showFragment(SettingsFragment())
+            }
+            true
+        }
+
+        // Only on the first start: opens the Projects tab. After a screen rotation,
+        // Android restores the screen that was showing.
+        if (savedInstanceState == null) {
+            binding.bottomNav.selectedItemId = R.id.nav_projects
+        }
+    }
+
+    private fun showFragment(fragment: Fragment) {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragmentContainer, fragment)
+            .commit()
     }
 }

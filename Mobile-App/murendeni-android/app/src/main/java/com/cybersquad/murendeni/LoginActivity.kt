@@ -43,7 +43,9 @@ class LoginActivity : AppCompatActivity() {
 
         binding.btnLogin.setOnClickListener { attemptLogin() }
 
-        // The Register screen is added in the next step, so this link does nothing yet.
+        binding.tvRegisterLink.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
     }
 
     private fun attemptLogin() {

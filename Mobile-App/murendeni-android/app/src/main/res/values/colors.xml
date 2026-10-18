@@ -6,4 +6,5 @@
     <color name="brand_concrete">#F5F3EE</color>
     <color name="brand_brick">#B5573A</color>
     <color name="brand_ink">#24272B</color>
+    <color name="placeholder_gray">#E9E5DA</color>
 </resources>

@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.MurendeniArchitects" parent="Base.Theme.MurendeniArchitects" />
+    <!-- Colours the highlight behind the selected tab in the bottom bar. -->
+    <style name="App.BottomNavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/brand_concrete</item>
+    </style>
 </resources>
