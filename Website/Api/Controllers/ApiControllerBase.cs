@@ -29,4 +29,18 @@ public abstract class ApiControllerBase : ControllerBase
     {
         return DateTime.SpecifyKind(date, DateTimeKind.Utc);
     }
+
+    // Turns text such as "InProgress" into an enum value.
+    // Numbers and unknown names are rejected, so only the real names are accepted.
+    protected static bool TryParseEnum<T>(string? text, out T value) where T : struct, Enum
+    {
+        value = default;
+
+        if (string.IsNullOrWhiteSpace(text) || int.TryParse(text, out _))
+        {
+            return false;
+        }
+
+        return Enum.TryParse(text, true, out value) && Enum.IsDefined(value);
+    }
 }

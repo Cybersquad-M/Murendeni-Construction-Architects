@@ -94,6 +94,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("ApiSales", policy => policy
         .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
         .RequireClaim("role", "Sales"));
+    // Designers and sales staff, for actions that both roles may use.
+    options.AddPolicy("ApiStaff", policy => policy
+        .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+        .RequireClaim("role", "Designer", "Sales"));
 });
 
 // NEW (API): Swagger gives a test page for the API at /swagger.
