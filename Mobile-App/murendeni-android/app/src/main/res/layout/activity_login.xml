@@ -124,6 +124,16 @@
                     android:text="Don't have an account? Register"
                     android:textColor="@color/brand_brick"
                     android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvHelpLink"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="Need help?"
+                    android:textColor="#6B7280"
+                    android:textSize="14sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

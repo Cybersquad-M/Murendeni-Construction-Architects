@@ -6,15 +6,33 @@
     android:background="@color/brand_concrete"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/tvTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:paddingTop="16dp"
-        android:textColor="@color/brand_ink"
-        android:textSize="24sp"
-        android:textStyle="bold" />
+        android:paddingTop="16dp">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/brand_ink"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- Only sales staff can create projects, so this button is hidden for other roles. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNewProject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New"
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:backgroundTint="@color/brand_brick" />
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"

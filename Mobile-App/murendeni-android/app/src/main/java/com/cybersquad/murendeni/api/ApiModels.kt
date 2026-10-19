@@ -100,3 +100,75 @@ data class ChangePasswordRequest(
 data class MessageResponse(
     val message: String
 )
+
+// ----- Staff features -----
+
+// An inquiry as shown to sales staff. Works for registered clients and for guests.
+data class StaffInquiry(
+    val inquiryId: Int,
+    val contactName: String,
+    val contactEmail: String?,
+    val contactPhone: String?,
+    val service: String?,
+    val message: String?,
+    val status: String,           // "Open", "InProgress", "Resolved" or "Closed"
+    val assignedToId: Int?,
+    val assignedToName: String?,
+    val hasClientAccount: Boolean,
+    val createdAt: String
+)
+
+// Data sent to change an inquiry. A null employeeId means "not assigned".
+data class UpdateInquiryRequest(
+    val status: String,
+    val employeeId: Int?
+)
+
+// The result of turning an inquiry into a client account.
+data class CreateClientResult(
+    val clientId: Int,
+    val email: String,
+    val linkedExisting: Boolean,
+    val temporaryPassword: String?,   // Only filled in for brand new accounts.
+    val message: String
+)
+
+// A staff member, for the "assign to" lists.
+data class EmployeeItem(
+    val employeeId: Int,
+    val fullName: String,
+    val role: String                  // "Designer" or "Sales"
+)
+
+// A client, for the new project form.
+data class ClientItem(
+    val clientId: Int,
+    val fullName: String,
+    val email: String,
+    val phone: String?
+)
+
+// Data sent to create a project.
+data class CreateProjectRequest(
+    val clientId: Int,
+    val employeeId: Int,
+    val name: String,
+    val propertyType: String,         // "Residential" or "Commercial"
+    val description: String?,
+    val location: String?,
+    val yearCompleted: Int?
+)
+
+data class CreatedProject(
+    val projectId: Int,
+    val name: String
+)
+
+// Data sent to change a project's status.
+data class UpdateProjectStatusRequest(
+    val status: String                // "Inquiry", "InProgress", "Review" or "Completed"
+)
+
+data class StatusResponse(
+    val status: String
+)

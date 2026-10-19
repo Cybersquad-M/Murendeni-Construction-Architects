@@ -39,6 +39,8 @@ object ApiClient {
             // The free Azure plan can take up to a minute to wake up, so the timeouts are long.
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
+            // Uploads send large files, so a slow phone connection needs a longer write timeout.
+            .writeTimeout(120, TimeUnit.SECONDS)
             .build()
 
         val created = Retrofit.Builder()

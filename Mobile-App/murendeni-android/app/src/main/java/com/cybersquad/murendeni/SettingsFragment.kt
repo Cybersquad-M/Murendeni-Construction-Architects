@@ -44,6 +44,11 @@ class SettingsFragment : Fragment() {
         binding.rowChangePassword.setOnClickListener {
             startActivity(Intent(requireContext(), ChangePasswordActivity::class.java))
         }
+
+        binding.btnHelp.setOnClickListener {
+            startActivity(Intent(requireContext(), HelpActivity::class.java))
+        }
+
         binding.btnLogout.setOnClickListener { confirmLogout() }
     }
 

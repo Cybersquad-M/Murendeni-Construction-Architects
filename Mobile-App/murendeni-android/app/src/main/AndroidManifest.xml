@@ -34,6 +34,21 @@
         <activity android:name=".EditProfileActivity" android:exported="false" />
         <activity android:name=".ChangePasswordActivity" android:exported="false" />
 
+        <activity android:name=".StaffInquiryDetailActivity" android:exported="false" />
+
+        <!-- configChanges stops Android restarting these two screens when the phone is rotated,
+             so the chosen file and dropdown choices are not lost. -->
+        <activity
+            android:name=".NewProjectActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".UploadFileActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false" />
+
+        <activity android:name=".HelpActivity" android:exported="false" />
+
     </application>
 
 </manifest>

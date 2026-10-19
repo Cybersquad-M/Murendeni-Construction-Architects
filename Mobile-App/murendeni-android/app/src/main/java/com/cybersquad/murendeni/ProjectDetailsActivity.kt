@@ -9,7 +9,9 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -17,6 +19,7 @@ import com.cybersquad.murendeni.api.ApiClient
 import com.cybersquad.murendeni.api.ApiErrors
 import com.cybersquad.murendeni.api.DesignFile
 import com.cybersquad.murendeni.api.ProjectDetail
+import com.cybersquad.murendeni.api.UpdateProjectStatusRequest
 import com.cybersquad.murendeni.data.SessionManager
 import com.cybersquad.murendeni.databinding.ActivityProjectDetailsBinding
 import com.cybersquad.murendeni.databinding.ItemDesignFileBinding
@@ -28,10 +31,26 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 // Shows one project: cover photo, details, status and the list of design files.
+// Designers and sales staff can also change the status. Designers can upload files.
 class ProjectDetailsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProjectDetailsBinding
     private var projectId = 0
+    private var role = ""
+
+    // The labels shown on screen, and the matching values the API expects.
+    private val statusLabels = listOf("Inquiry", "In Progress", "Review", "Completed")
+    private val statusValues = listOf("Inquiry", "InProgress", "Review", "Completed")
+    private var selectedStatusIndex = 0
+
+    // Starts the upload screen. When a file was uploaded, the project reloads to show it.
+    private val uploadLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            loadProject(silent = true)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,19 +59,41 @@ class ProjectDetailsActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.root.applySystemBarPadding()
 
+        role = SessionManager(this).getRole()
+
         // The id of the project to show is passed in by the list screen.
         projectId = intent.getIntExtra(EXTRA_PROJECT_ID, 0)
 
         binding.tvBack.setOnClickListener { finish() }
         binding.btnRetry.setOnClickListener { loadProject() }
 
+        // The status dropdown is set up once. Its starting choice is set when the project loads.
+        binding.actvStatus.setAdapter(
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, statusLabels)
+        )
+        binding.actvStatus.setOnItemClickListener { _, _, position, _ ->
+            selectedStatusIndex = position
+        }
+        binding.btnSaveStatus.setOnClickListener { saveStatus() }
+
+        binding.btnUpload.setOnClickListener {
+            val intent = Intent(this, UploadFileActivity::class.java)
+            intent.putExtra(UploadFileActivity.EXTRA_PROJECT_ID, projectId)
+            intent.putExtra(UploadFileActivity.EXTRA_PROJECT_NAME, binding.tvName.text.toString())
+            uploadLauncher.launch(intent)
+        }
+
         loadProject()
     }
 
-    private fun loadProject() {
-        binding.progress.visibility = View.VISIBLE
-        binding.errorLayout.visibility = View.GONE
-        binding.scrollContent.visibility = View.GONE
+    // A silent load refreshes the screen in place after a change. The page is not
+    // hidden, so the scroll position is kept, and a failure is shown as a short message.
+    private fun loadProject(silent: Boolean = false) {
+        if (!silent) {
+            binding.progress.visibility = View.VISIBLE
+            binding.errorLayout.visibility = View.GONE
+            binding.scrollContent.visibility = View.GONE
+        }
 
         lifecycleScope.launch {
             try {
@@ -65,14 +106,14 @@ class ProjectDetailsActivity : AppCompatActivity() {
 
                     response.isSuccessful && project != null -> showProject(project)
 
-                    else -> showError(ApiErrors.messageFrom(response))
+                    else -> reportProblem(ApiErrors.messageFrom(response), silent)
                 }
             } catch (e: IOException) {
                 Log.e(TAG, "Network problem while loading the project", e)
-                showError("Could not reach the server. Check the internet connection and try again.")
+                reportProblem("Could not reach the server. Check the internet connection and try again.", silent)
             } catch (e: Exception) {
                 Log.e(TAG, "Unexpected problem while loading the project", e)
-                showError("Something went wrong. Please try again.")
+                reportProblem("Something went wrong. Please try again.", silent)
             } finally {
                 binding.progress.visibility = View.GONE
             }
@@ -89,9 +130,8 @@ class ProjectDetailsActivity : AppCompatActivity() {
             ColorStateList.valueOf(StatusUi.projectColor(project.status))
 
         // The info lines are built from whatever values exist. Empty ones are skipped.
-        val isClient = SessionManager(this).getRole() == "Client"
         val lines = mutableListOf<String>()
-        if (!isClient) project.clientName?.let { lines.add("Client: $it") }
+        if (role != "Client") project.clientName?.let { lines.add("Client: $it") }
         project.designerName?.let { lines.add("Designer: $it") }
         project.location?.let { lines.add("Location: $it") }
         project.yearCompleted?.let { lines.add("Year: $it") }
@@ -113,7 +153,58 @@ class ProjectDetailsActivity : AppCompatActivity() {
             .error(R.color.placeholder_gray)
             .into(binding.ivCover)
 
+        // Designers and sales staff can change the status. Clients can only look.
+        val canChangeStatus = role == "Designer" || role == "Sales"
+        binding.cardStatus.visibility = if (canChangeStatus) View.VISIBLE else View.GONE
+        if (canChangeStatus) {
+            selectedStatusIndex = statusValues.indexOf(project.status).coerceAtLeast(0)
+            binding.actvStatus.setText(statusLabels[selectedStatusIndex], false)
+        }
+
+        // Only designers upload files.
+        binding.btnUpload.visibility = if (role == "Designer") View.VISIBLE else View.GONE
+
         showFiles(project.files)
+    }
+
+    private fun saveStatus() {
+        binding.btnSaveStatus.isEnabled = false
+
+        lifecycleScope.launch {
+            try {
+                val request = UpdateProjectStatusRequest(statusValues[selectedStatusIndex])
+                val response = ApiClient.getService(this@ProjectDetailsActivity)
+                    .updateProjectStatus(projectId, request)
+
+                when {
+                    response.code() == 401 ->
+                        returnToLogin("Your login has expired. Please log in again.")
+
+                    response.isSuccessful -> {
+                        Toast.makeText(this@ProjectDetailsActivity, "Status updated.", Toast.LENGTH_SHORT).show()
+                        loadProject(silent = true)
+                    }
+
+                    else -> Toast.makeText(
+                        this@ProjectDetailsActivity,
+                        ApiErrors.messageFrom(response),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: IOException) {
+                Log.e(TAG, "Network problem while saving the status", e)
+                Toast.makeText(
+                    this@ProjectDetailsActivity,
+                    "Could not reach the server. Check the internet connection and try again.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected problem while saving the status", e)
+                Toast.makeText(this@ProjectDetailsActivity, "Something went wrong. Please try again.", Toast.LENGTH_LONG).show()
+            } finally {
+                binding.btnSaveStatus.isEnabled = true
+            }
+        }
     }
 
     // Adds one card per design file, each with View and Download buttons.
@@ -176,9 +267,15 @@ class ProjectDetailsActivity : AppCompatActivity() {
         }
     }
 
-    private fun showError(message: String) {
-        binding.tvError.text = message
-        binding.errorLayout.visibility = View.VISIBLE
+    // A full load that fails replaces the screen with an error and a retry button.
+    // A silent load that fails only shows a short message.
+    private fun reportProblem(message: String, silent: Boolean) {
+        if (silent) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        } else {
+            binding.tvError.text = message
+            binding.errorLayout.visibility = View.VISIBLE
+        }
     }
 
     companion object {

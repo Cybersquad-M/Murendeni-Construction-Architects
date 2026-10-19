@@ -21,17 +21,23 @@ class MainActivity : AppCompatActivity() {
         // Keeps the content below the status bar. The tab bar handles the bottom edge itself.
         binding.fragmentContainer.applyTopSystemBarPadding()
 
-        val session = SessionManager(this)
+        val role = SessionManager(this).getRole()
 
-        // Only clients can send inquiries, so staff do not get that tab.
-        if (session.getRole() != "Client") {
-            binding.bottomNav.menu.findItem(R.id.nav_inquiries).isVisible = false
-        }
+        // Clients send and follow their inquiries. Sales staff manage all of them.
+        // Designers do not use this tab.
+        val hasInquiriesTab = role == "Client" || role == "Sales"
+        binding.bottomNav.menu.findItem(R.id.nav_inquiries).isVisible = hasInquiriesTab
 
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_projects -> showFragment(ProjectsFragment())
-                R.id.nav_inquiries -> showFragment(InquiriesFragment())
+                R.id.nav_inquiries -> {
+                    if (role == "Sales") {
+                        showFragment(StaffInquiriesFragment())
+                    } else {
+                        showFragment(InquiriesFragment())
+                    }
+                }
                 R.id.nav_settings -> showFragment(SettingsFragment())
             }
             true

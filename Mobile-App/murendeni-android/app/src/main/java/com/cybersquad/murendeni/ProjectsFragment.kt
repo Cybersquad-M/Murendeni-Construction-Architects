@@ -1,5 +1,5 @@
 package com.cybersquad.murendeni
-import kotlinx.coroutines.CancellationException
+
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -15,6 +15,7 @@ import com.cybersquad.murendeni.api.ProjectSummary
 import com.cybersquad.murendeni.data.SessionManager
 import com.cybersquad.murendeni.databinding.FragmentProjectsBinding
 import com.cybersquad.murendeni.util.returnToLogin
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -43,6 +44,12 @@ class ProjectsFragment : Fragment() {
 
         binding.tvTitle.text = if (role == "Sales") "All Projects" else "My Projects"
 
+        // Only sales staff can create projects.
+        binding.btnNewProject.visibility = if (role == "Sales") View.VISIBLE else View.GONE
+        binding.btnNewProject.setOnClickListener {
+            startActivity(Intent(requireContext(), NewProjectActivity::class.java))
+        }
+
         // Staff see the client's name on each card. Clients do not need it.
         adapter = ProjectAdapter(showClient = role != "Client") { project -> openDetails(project) }
         binding.rvProjects.layoutManager = LinearLayoutManager(requireContext())
@@ -51,7 +58,12 @@ class ProjectsFragment : Fragment() {
         binding.swipeRefresh.setColorSchemeResources(R.color.brand_brick)
         binding.swipeRefresh.setOnRefreshListener { loadProjects() }
         binding.btnRetry.setOnClickListener { loadProjects() }
+    }
 
+    // Loads every time the screen comes back into view, so a new project or a
+    // changed status shows straight away.
+    override fun onResume() {
+        super.onResume()
         loadProjects()
     }
 

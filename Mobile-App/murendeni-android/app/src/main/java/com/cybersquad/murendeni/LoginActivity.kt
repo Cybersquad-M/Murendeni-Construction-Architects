@@ -46,6 +46,10 @@ class LoginActivity : AppCompatActivity() {
         binding.tvRegisterLink.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
+
+        binding.tvHelpLink.setOnClickListener {
+            startActivity(Intent(this, HelpActivity::class.java))
+        }
     }
 
     private fun attemptLogin() {
