@@ -59,3 +59,44 @@ data class ProjectDetail(
     val yearCompleted: Int?,
     val files: List<DesignFile>
 )
+
+// One inquiry in the Inquiries tab.
+data class InquiryItem(
+    val inquiryId: Int,
+    val subject: String,
+    val service: String?,
+    val message: String?,
+    val status: String,           // "Open", "InProgress", "Resolved" or "Closed"
+    val createdAt: String
+)
+
+// Data sent to the API to create an inquiry.
+data class CreateInquiryRequest(
+    val service: String?,
+    val message: String
+)
+
+// The account details shown on the edit profile screen.
+data class AccountInfo(
+    val fullName: String,
+    val email: String,
+    val phone: String?,
+    val role: String
+)
+
+// Data sent to the API to update a client's name and phone.
+data class UpdateAccountRequest(
+    val fullName: String,
+    val phone: String?
+)
+
+// Data sent to the API to change a password.
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String
+)
+
+// The short confirmation the API sends back after a password change.
+data class MessageResponse(
+    val message: String
+)

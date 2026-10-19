@@ -1,49 +1,75 @@
 package com.cybersquad.murendeni
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.cybersquad.murendeni.data.SessionManager
+import com.cybersquad.murendeni.databinding.FragmentSettingsBinding
 import com.cybersquad.murendeni.util.returnToLogin
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-// Temporary screen. The real settings screen replaces this file in the next step.
+// The Settings tab: shows who is logged in and links to the account screens.
 class SettingsFragment : Fragment() {
+
+    private var _binding: FragmentSettingsBinding? = null
+    private val binding get() = _binding!!
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val context = requireContext()
-        val session = SessionManager(context)
+        _binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-        val layout = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val isClient = SessionManager(requireContext()).getRole() == "Client"
+
+        // Only clients can edit their own details. Staff details are changed by an Admin on the website.
+        if (!isClient) {
+            binding.rowEditProfile.visibility = View.GONE
+            binding.dividerRows.visibility = View.GONE
+            binding.tvStaffNote.visibility = View.VISIBLE
         }
 
-        val info = TextView(context).apply {
-            text = "${session.getName()}\nSigned in as ${session.getRole()}"
-            gravity = Gravity.CENTER
+        binding.rowEditProfile.setOnClickListener {
+            startActivity(Intent(requireContext(), EditProfileActivity::class.java))
         }
-
-        val logout = Button(context).apply {
-            text = "Log out"
-            setOnClickListener { context.returnToLogin() }
+        binding.rowChangePassword.setOnClickListener {
+            startActivity(Intent(requireContext(), ChangePasswordActivity::class.java))
         }
+        binding.btnLogout.setOnClickListener { confirmLogout() }
+    }
 
-        layout.addView(info)
-        layout.addView(logout)
-        return layout
+    // Refreshes the details every time the screen comes back into view,
+    // so a name changed on the edit screen shows straight away.
+    override fun onResume() {
+        super.onResume()
+
+        val session = SessionManager(requireContext())
+        binding.tvName.text = session.getName()
+        binding.tvEmail.text = session.getEmail()
+        binding.tvRole.text = session.getRole()
+    }
+
+    private fun confirmLogout() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Log out")
+            .setMessage("Are you sure you want to log out?")
+            .setPositiveButton("Log out") { _, _ -> requireContext().returnToLogin() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    // The binding is cleared when the screen's view is destroyed, to avoid memory leaks.
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

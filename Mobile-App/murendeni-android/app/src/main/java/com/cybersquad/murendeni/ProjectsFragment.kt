@@ -1,5 +1,5 @@
 package com.cybersquad.murendeni
-
+import kotlinx.coroutines.CancellationException
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -74,6 +74,10 @@ class ProjectsFragment : Fragment() {
 
                     else -> showError(ApiErrors.messageFrom(response))
                 }
+            } catch (e: CancellationException) {
+                // The screen was closed while loading, for example when the user switched tabs.
+                // Nothing needs to be shown, so the cancellation is passed on.
+                throw e
             } catch (e: IOException) {
                 Log.e(TAG, "Network problem while loading projects", e)
                 showError("Could not reach the server. Check the internet connection and try again.")

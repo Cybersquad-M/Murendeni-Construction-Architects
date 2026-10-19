@@ -32,6 +32,11 @@ class SessionManager(context: Context) {
         prefs.edit().clear().apply()
     }
 
+    // Used after the user edits their name in Settings.
+    fun updateName(name: String) {
+        prefs.edit().putString(KEY_NAME, name).apply()
+    }
+
     companion object {
         private const val KEY_TOKEN = "token"
         private const val KEY_USER_ID = "user_id"

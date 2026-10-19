@@ -24,4 +24,15 @@ object StatusUi {
         "archived" -> 0xFF6B7280.toInt()
         else -> 0xFFB5573A.toInt()           // draft
     }
+
+    // Inquiry statuses: "InProgress" is shown as "In Progress".
+    fun inquiryLabel(status: String): String =
+        if (status == "InProgress") "In Progress" else status
+
+    fun inquiryColor(status: String): Int = when (status) {
+        "InProgress" -> 0xFF3A5570.toInt()   // blue-grey
+        "Resolved" -> 0xFF1F6B3A.toInt()     // green
+        "Closed" -> 0xFF6B7280.toInt()       // grey
+        else -> 0xFFB5573A.toInt()           // brick, used for "Open"
+    }
 }

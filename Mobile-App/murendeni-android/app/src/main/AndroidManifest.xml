@@ -29,6 +29,11 @@
             android:exported="false" />
         <activity android:name=".RegisterActivity" android:exported="false" />
         <activity android:name=".ProjectDetailsActivity" android:exported="false" />
+
+        <activity android:name=".NewInquiryActivity" android:exported="false" />
+        <activity android:name=".EditProfileActivity" android:exported="false" />
+        <activity android:name=".ChangePasswordActivity" android:exported="false" />
+
     </application>
 
 </manifest>
