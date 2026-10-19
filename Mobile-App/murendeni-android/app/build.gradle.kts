@@ -62,4 +62,7 @@ dependencies {
     // Scrolling list used for the projects.
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // A real JSON library for unit tests. The Android one is only an empty stub on a build machine.
+    testImplementation("org.json:json:20240303")
+
 }
