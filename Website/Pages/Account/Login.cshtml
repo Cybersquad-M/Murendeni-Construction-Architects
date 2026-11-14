@@ -568,7 +568,7 @@
 
             .social-buttons {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr;
                 gap: 14px;
             }
 
@@ -1029,33 +1029,24 @@
 
                 <div class="social-buttons">
 
+                    <form method="post"
+                          asp-page-handler="Google">
 
-                    <button type="button"
-                            class="social-button">
+                        <button type="submit"
+                                class="social-button"
+                                style="width:100%">
 
-                        <span class="google-icon">
-                            G
-                        </span>
+                            <span class="google-icon">
+                                G
+                            </span>
 
-                        <span>
-                            Google
-                        </span>
+                            <span>
+                                Continue with Google
+                            </span>
 
-                    </button>
+                        </button>
 
-
-                    <button type="button"
-                            class="social-button">
-
-                        <span class="apple-icon">
-                            ●
-                        </span>
-
-                        <span>
-                            Apple
-                        </span>
-
-                    </button>
+                    </form>
 
                 </div>
 

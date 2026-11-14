@@ -36,6 +36,18 @@ public class LoginModel : PageModel
 
     public void OnGet()
     {
+        // Shows a message if Google sign-in failed (set by ExternalCallback).
+        ErrorMessage = TempData["LoginError"] as string;
+    }
+
+    // "Continue with Google" button: sends the visitor to Google.
+    public IActionResult OnPostGoogle()
+    {
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = Url.Page("/Account/ExternalCallback")
+        };
+        return Challenge(properties, "Google");
     }
 
     public async Task<IActionResult> OnPostAsync()

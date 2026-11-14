@@ -28,6 +28,13 @@ public class RegisterRequest
     public string Password { get; set; } = string.Empty;
 }
 
+// Data the app sends after the user signs in with Google on the phone.
+public class GoogleLoginRequest
+{
+    [Required]
+    public string IdToken { get; set; } = string.Empty;
+}
+
 // Data sent back after a successful login or registration.
 // The password hash is never included.
 public class AuthResponse

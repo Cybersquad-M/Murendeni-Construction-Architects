@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Google.Apis.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MurendeniConstructionArchitects.Api.Dtos;
@@ -15,11 +16,16 @@ public class AuthController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly JwtTokenService _tokens;
+    private readonly ExternalLoginService _external;
+    private readonly IConfiguration _config;
 
-    public AuthController(ApplicationDbContext db, JwtTokenService tokens)
+    public AuthController(ApplicationDbContext db, JwtTokenService tokens,
+        ExternalLoginService external, IConfiguration config)
     {
         _db = db;
         _tokens = tokens;
+        _external = external;
+        _config = config;
     }
 
     // POST /api/auth/register: creates a client account and returns a login token.
@@ -72,6 +78,43 @@ public class AuthController : ControllerBase
 
         // The same message is returned for a wrong email and a wrong password.
         return Unauthorized(new { message = "Incorrect email or password." });
+    }
+
+    // POST /api/auth/google: the app signs in with Google, sends us the Google ID token,
+    // and we return the same login response as /login.
+    [HttpPost("google")]
+    public async Task<IActionResult> Google(GoogleLoginRequest request)
+    {
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            // Checks the signature, expiry and that the token was issued for OUR Google client.
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken,
+                new GoogleJsonWebSignature.ValidationSettings
+                {
+                    Audience = new[] { _config["Auth:Google:ClientId"] }
+                });
+        }
+        catch (InvalidJwtException)
+        {
+            return Unauthorized(new { message = "Invalid Google sign-in." });
+        }
+
+        var user = await _external.ResolveAsync("Google", payload.Subject,
+            payload.Email, payload.Name, payload.EmailVerified);
+
+        if (user == null)
+        {
+            return Unauthorized(new { message = "We couldn't match that Google account." });
+        }
+
+        // Admin accounts stay web-only.
+        if (user.Role == "Admin")
+        {
+            return StatusCode(403, new { message = "Admin accounts can only be used on the website." });
+        }
+
+        return Ok(BuildResponse(user.Id, user.Name, user.Email, user.Role));
     }
 
     // GET /api/auth/me: returns who the token belongs to. Used to confirm that tokens work.

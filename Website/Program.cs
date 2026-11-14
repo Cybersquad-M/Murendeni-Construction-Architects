@@ -1,11 +1,13 @@
-using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MurendeniConstructionArchitects.Data;
 using MurendeniConstructionArchitects.Services;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,15 @@ builder.Services.AddRazorPages(options =>
 // NEW (API): controllers for the REST API used by the mobile app.
 builder.Services.AddControllers();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<ExternalLoginService>(); // Google sign-in: matches a Google account to a Client/Employee
+
+// Azure App Service sits behind a proxy; this makes the Google redirect URI come out as https://.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // The website uses cookies. NEW (API): the mobile app uses JWT tokens instead.
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -52,6 +63,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // Where a logged-in user is sent after opening an area their role does not allow.
         options.AccessDeniedPath = "/AccessDenied";
     })
+    // Holds the Google result for a few minutes while /Account/ExternalCallback maps it to our own user.
+    .AddCookie("External", options => options.ExpireTimeSpan = TimeSpan.FromMinutes(10))
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         // Keeps claim names exactly as written in the token ("role", "uid", ...).
@@ -69,6 +82,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             NameClaimType = "name",
             RoleClaimType = "role"
         };
+    })
+    .AddGoogle(options =>
+    {
+        options.SignInScheme = "External";
+        options.ClientId = builder.Configuration["Auth:Google:ClientId"]
+            ?? throw new InvalidOperationException("Auth:Google:ClientId is missing. Add it to User Secrets or App Service settings.");
+        options.ClientSecret = builder.Configuration["Auth:Google:ClientSecret"]
+            ?? throw new InvalidOperationException("Auth:Google:ClientSecret is missing. Add it to User Secrets or App Service settings.");
+        // Lets us check that Google has verified the email address.
+        options.ClaimActions.MapJsonKey("email_verified", "email_verified");
     });
 
 // The policies check the "role" claim stored in the cookie or the token.
@@ -144,6 +167,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }));
 
 var app = builder.Build();
+
+app.UseForwardedHeaders(); // must be first
 
 // NEW (API): serves the Swagger test page. Left on in production so the API can be shown in the demo video.
 app.UseSwagger();

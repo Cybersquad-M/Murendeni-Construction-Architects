@@ -23,6 +23,13 @@ public class Employee
 
     public EmployeeRole Role { get; set; }
 
+    // Google sign-in link. The provider's stable user id, never the email.
+    [MaxLength(50)]
+    public string? ExternalProvider { get; set; }
+
+    [MaxLength(200)]
+    public string? ExternalSubject { get; set; }
+
     public DateTime HiredAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Inquiry> Inquiries { get; set; } = new List<Inquiry>();

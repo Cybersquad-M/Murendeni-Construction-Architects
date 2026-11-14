@@ -39,6 +39,8 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.Phone).HasColumnName("phone");
             e.Property(x => x.PasswordHash).HasColumnName("password_hash");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.ExternalProvider).HasColumnName("external_provider");
+            e.Property(x => x.ExternalSubject).HasColumnName("external_subject");
             e.HasIndex(x => x.Email).IsUnique();
         });
 
@@ -53,6 +55,8 @@ public class ApplicationDbContext : DbContext
             e.Property(x => x.Role).HasColumnName("role")
                 .HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.HiredAt).HasColumnName("hired_at");
+            e.Property(x => x.ExternalProvider).HasColumnName("external_provider");
+            e.Property(x => x.ExternalSubject).HasColumnName("external_subject");
             e.HasIndex(x => x.Email).IsUnique();
         });
 
