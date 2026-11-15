@@ -36,6 +36,7 @@
                     <a href="/Admin/ManageEmployees">Manage Employees</a>
                     <a href="/Admin/ManagePortfolio">Manage Portfolio</a>
                     <a href="/Admin/Reports">Reports</a>
+                    <a href="/Admin/AuditLog">System Logs</a>
                 }
 
                 @if (currentRole == "Admin" || currentRole == "Designer")
@@ -74,12 +75,13 @@
     </div>
 
     @await RenderSectionAsync("Scripts", required: false)
+
     <script>
-            // If the browser restores this page from its back/forward cache, reload it
-            // so the server checks the login again.
-            window.addEventListener("pageshow", function (e) {
-                if (e.persisted) { window.location.reload(); }
-            });
+        // If the browser restores this page from its back/forward cache, reload it
+        // so the server checks the login again.
+        window.addEventListener("pageshow", function (e) {
+            if (e.persisted) { window.location.reload(); }
+        });
     </script>
 </body>
 </html>

@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using MurendeniConstructionArchitects.Data;
 using MurendeniConstructionArchitects.Helpers;
 using MurendeniConstructionArchitects.Models;
+using MurendeniConstructionArchitects.Services;
 
 namespace MurendeniConstructionArchitects.Pages.Account;
 
@@ -23,10 +24,12 @@ public class LoginInput
 public class LoginModel : PageModel
 {
     private readonly ApplicationDbContext _db;
+    private readonly AuditService _audit;
 
-    public LoginModel(ApplicationDbContext db)
+    public LoginModel(ApplicationDbContext db, AuditService audit)
     {
         _db = db;
+        _audit = audit;
     }
 
     [BindProperty]
@@ -63,6 +66,8 @@ public class LoginModel : PageModel
             PasswordHasher.VerifyPassword(Input.Password, client.PasswordHash))
         {
             await SignInAsClientAsync(client);
+            await _audit.LogAsync("Login", $"{client.FullName} signed in", "Client", client.ClientId.ToString(),
+                actor: AuditActor.ForUser(HttpContext, "Client", client.ClientId, client.FullName, client.Email));
             return RedirectToPage("/Portal/Index");
         }
 
@@ -72,11 +77,16 @@ public class LoginModel : PageModel
             PasswordHasher.VerifyPassword(Input.Password, employee.PasswordHash))
         {
             await SignInAsEmployeeAsync(employee);
+            await _audit.LogAsync("Login", $"{employee.FullName} signed in", "Employee", employee.EmployeeId.ToString(),
+                actor: AuditActor.ForUser(HttpContext, employee.Role.ToString(), employee.EmployeeId, employee.FullName, employee.Email));
             return RedirectToPage("/Admin/Index");
         }
 
         // Same message either way - we don't reveal whether the email
         // exists, or which table it belonged to.
+        await _audit.LogAsync("LoginFailed", $"Failed sign-in attempt for {Input.Email}",
+            actor: AuditActor.Anonymous(HttpContext, Input.Email));
+
         ErrorMessage = "Incorrect email or password.";
         return Page();
     }

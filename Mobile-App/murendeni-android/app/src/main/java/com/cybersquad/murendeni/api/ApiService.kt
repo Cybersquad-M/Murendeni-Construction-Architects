@@ -22,6 +22,10 @@ interface ApiService {
     @POST("auth/google")
     suspend fun loginWithGoogle(@Body request: GoogleLoginRequest): Response<AuthResponse>
 
+    // Tells the server the user logged out, so it can be recorded in the system log.
+    @POST("auth/logout")
+    suspend fun logout(): Response<MessageResponse>
+
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
 

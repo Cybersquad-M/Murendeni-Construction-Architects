@@ -2,14 +2,20 @@ package com.cybersquad.murendeni
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.cybersquad.murendeni.api.ApiClient
 import com.cybersquad.murendeni.data.SessionManager
 import com.cybersquad.murendeni.databinding.FragmentSettingsBinding
 import com.cybersquad.murendeni.util.returnToLogin
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import java.io.IOException
 
 // The Settings tab: shows who is logged in and links to the account screens.
 class SettingsFragment : Fragment() {
@@ -67,9 +73,27 @@ class SettingsFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Log out")
             .setMessage("Are you sure you want to log out?")
-            .setPositiveButton("Log out") { _, _ -> requireContext().returnToLogin() }
+            .setPositiveButton("Log out") { _, _ -> logOut() }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    // Tells the server first, so the logout is recorded in the system log, and then clears the
+    // saved login. If the phone is offline or the server is slow, the user is still logged out.
+    private fun logOut() {
+        val appContext = requireContext().applicationContext
+        binding.btnLogout.isEnabled = false // stops a second tap while the server is told
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // The saved token is still needed for this call, so it is sent before clearing the session.
+                withTimeoutOrNull(3000) { ApiClient.getService(appContext).logout() }
+            } catch (e: IOException) {
+                Log.d("SettingsFragment", "Could not tell the server about the logout: ${e.message}")
+            } finally {
+                appContext.returnToLogin()
+            }
+        }
     }
 
     // The binding is cleared when the screen's view is destroyed, to avoid memory leaks.

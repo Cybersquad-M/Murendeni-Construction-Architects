@@ -11,10 +11,12 @@ namespace MurendeniConstructionArchitects.Pages.Account;
 public class ExternalCallbackModel : PageModel
 {
     private readonly ExternalLoginService _external;
+    private readonly AuditService _audit;
 
-    public ExternalCallbackModel(ExternalLoginService external)
+    public ExternalCallbackModel(ExternalLoginService external, AuditService audit)
     {
         _external = external;
+        _audit = audit;
     }
 
     public async Task<IActionResult> OnGetAsync()
@@ -28,6 +30,8 @@ public class ExternalCallbackModel : PageModel
 
         if (!result.Succeeded || google == null || subject == null)
         {
+            await _audit.LogAsync("LoginFailed", "Google sign-in was cancelled or failed",
+                actor: AuditActor.Anonymous(HttpContext, null));
             return Fail("Google sign-in was cancelled or failed. Please try again.");
         }
 
@@ -43,6 +47,9 @@ public class ExternalCallbackModel : PageModel
 
         if (user == null)
         {
+            await _audit.LogAsync("LoginFailed",
+                $"Google sign-in refused: no matching account for {google.FindFirstValue(ClaimTypes.Email)}",
+                actor: AuditActor.Anonymous(HttpContext, google.FindFirstValue(ClaimTypes.Email)));
             return Fail("We couldn't match that Google account. Use an account with a verified email, or sign in with your password.");
         }
 
@@ -59,6 +66,9 @@ public class ExternalCallbackModel : PageModel
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
+
+        await _audit.LogAsync("Login", $"{user.Name} signed in with Google", user.Role == "Client" ? "Client" : "Employee",
+            user.Id.ToString(), actor: AuditActor.ForUser(HttpContext, user.Role, user.Id, user.Name, user.Email));
 
         return user.Role == "Client"
             ? RedirectToPage("/Portal/Index")

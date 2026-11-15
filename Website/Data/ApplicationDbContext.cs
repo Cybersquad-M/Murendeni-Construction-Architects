@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Design> Designs => Set<Design>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Inquiry> Inquiries => Set<Inquiry>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     private static string ProjectStatusToDb(ProjectStatus status) => status switch
     {
         ProjectStatus.Inquiry => "inquiry",
@@ -28,6 +29,27 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // The system log. Rows are only ever added, never changed (the database also enforces this).
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.ToTable("AuditLog");
+            e.HasKey(x => x.AuditId);
+            e.Property(x => x.AuditId).HasColumnName("audit_id").ValueGeneratedOnAdd();
+            e.Property(x => x.OccurredAt).HasColumnName("occurred_at");
+            e.Property(x => x.ActorType).HasColumnName("actor_type").HasMaxLength(20);
+            e.Property(x => x.ActorId).HasColumnName("actor_id");
+            e.Property(x => x.ActorName).HasColumnName("actor_name").HasMaxLength(100);
+            e.Property(x => x.ActorEmail).HasColumnName("actor_email").HasMaxLength(255);
+            e.Property(x => x.Source).HasColumnName("source").HasMaxLength(20);
+            e.Property(x => x.Action).HasColumnName("action").HasMaxLength(30);
+            e.Property(x => x.EntityType).HasColumnName("entity_type").HasMaxLength(50);
+            e.Property(x => x.EntityId).HasColumnName("entity_id").HasMaxLength(50);
+            e.Property(x => x.Summary).HasColumnName("summary").HasMaxLength(500);
+            e.Property(x => x.Details).HasColumnName("details");
+            e.Property(x => x.IpAddress).HasColumnName("ip_address").HasMaxLength(45);
+            e.Property(x => x.UserAgent).HasColumnName("user_agent").HasMaxLength(300);
+        });
 
         modelBuilder.Entity<Client>(e =>
         {

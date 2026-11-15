@@ -18,14 +18,16 @@ public class AuthController : ControllerBase
     private readonly JwtTokenService _tokens;
     private readonly ExternalLoginService _external;
     private readonly IConfiguration _config;
+    private readonly AuditService _audit;
 
     public AuthController(ApplicationDbContext db, JwtTokenService tokens,
-        ExternalLoginService external, IConfiguration config)
+        ExternalLoginService external, IConfiguration config, AuditService audit)
     {
         _db = db;
         _tokens = tokens;
         _external = external;
         _config = config;
+        _audit = audit;
     }
 
     // POST /api/auth/register: creates a client account and returns a login token.
@@ -60,6 +62,8 @@ public class AuthController : ControllerBase
         if (client != null && client.PasswordHash != null &&
             PasswordHasher.VerifyPassword(request.Password, client.PasswordHash))
         {
+            await _audit.LogAsync("Login", $"{client.FullName} signed in", "Client", client.ClientId.ToString(),
+                actor: AuditActor.ForUser(HttpContext, "Client", client.ClientId, client.FullName, client.Email));
             return Ok(BuildResponse(client.ClientId, client.FullName, client.Email, "Client"));
         }
 
@@ -70,11 +74,20 @@ public class AuthController : ControllerBase
             // Admin accounts stay web-only.
             if (employee.Role == EmployeeRole.Admin)
             {
+                await _audit.LogAsync("LoginBlocked", $"{employee.FullName} tried to sign in to the mobile app (admin accounts are website-only)",
+                    "Employee", employee.EmployeeId.ToString(),
+                    actor: AuditActor.ForUser(HttpContext, "Admin", employee.EmployeeId, employee.FullName, employee.Email));
                 return StatusCode(403, new { message = "Admin accounts can only be used on the website." });
             }
 
+            await _audit.LogAsync("Login", $"{employee.FullName} signed in", "Employee", employee.EmployeeId.ToString(),
+                actor: AuditActor.ForUser(HttpContext, employee.Role.ToString(), employee.EmployeeId, employee.FullName, employee.Email));
+
             return Ok(BuildResponse(employee.EmployeeId, employee.FullName, employee.Email, employee.Role.ToString()));
         }
+
+        await _audit.LogAsync("LoginFailed", $"Failed sign-in attempt for {request.Email}",
+            actor: AuditActor.Anonymous(HttpContext, request.Email));
 
         // The same message is returned for a wrong email and a wrong password.
         return Unauthorized(new { message = "Incorrect email or password." });
@@ -97,6 +110,8 @@ public class AuthController : ControllerBase
         }
         catch (InvalidJwtException)
         {
+            await _audit.LogAsync("LoginFailed", "Google sign-in with an invalid token",
+                actor: AuditActor.Anonymous(HttpContext, null));
             return Unauthorized(new { message = "Invalid Google sign-in." });
         }
 
@@ -105,16 +120,35 @@ public class AuthController : ControllerBase
 
         if (user == null)
         {
+            await _audit.LogAsync("LoginFailed", $"Google sign-in refused: no matching account for {payload.Email}",
+                actor: AuditActor.Anonymous(HttpContext, payload.Email));
             return Unauthorized(new { message = "We couldn't match that Google account." });
         }
 
         // Admin accounts stay web-only.
         if (user.Role == "Admin")
         {
+            await _audit.LogAsync("LoginBlocked", $"{user.Name} tried to sign in to the mobile app (admin accounts are website-only)",
+                "Employee", user.Id.ToString(),
+                actor: AuditActor.ForUser(HttpContext, "Admin", user.Id, user.Name, user.Email));
             return StatusCode(403, new { message = "Admin accounts can only be used on the website." });
         }
 
+        await _audit.LogAsync("Login", $"{user.Name} signed in with Google", user.Role == "Client" ? "Client" : "Employee",
+            user.Id.ToString(), actor: AuditActor.ForUser(HttpContext, user.Role, user.Id, user.Name, user.Email));
+
         return Ok(BuildResponse(user.Id, user.Name, user.Email, user.Role));
+    }
+
+    // POST /api/auth/logout: the app calls this when the user taps Log out, so the logout
+    // is recorded in the system log. The app then deletes its saved token on the phone.
+    // The token itself is not cancelled here: it simply expires on its own (Jwt:ExpiryHours).
+    [HttpPost("logout")]
+    [Authorize(Policy = "ApiAnyUser")]
+    public async Task<IActionResult> Logout()
+    {
+        await _audit.LogAsync("Logout", "Signed out of the mobile app");
+        return Ok(new { message = "Signed out." });
     }
 
     // GET /api/auth/me: returns who the token belongs to. Used to confirm that tokens work.

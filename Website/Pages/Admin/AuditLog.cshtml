@@ -1,0 +1,165 @@
+﻿@page
+@model MurendeniConstructionArchitects.Pages.Admin.AuditLogModel
+@{
+    ViewData["Title"] = "System Logs";
+}
+
+<style>
+    .audit-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; align-items: end; }
+    .audit-filters label { display: block; font-size: 12px; margin-bottom: 4px; opacity: .75; }
+    .audit-filters .admin-search { width: 100%; }
+    .audit-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+    .audit-note { margin-bottom: 16px; opacity: .8; }
+    .audit-who small { display: block; opacity: .7; }
+    .audit-details { margin-top: 6px; }
+    .audit-details summary { cursor: pointer; }
+    .audit-details table { margin-top: 8px; border-collapse: collapse; font-size: 13px; }
+    .audit-details td, .audit-details th { padding: 4px 12px 4px 0; text-align: left; vertical-align: top; }
+    .audit-pager { display: flex; gap: 16px; align-items: center; margin-top: 20px; }
+</style>
+
+<div class="admin-page-header">
+    <h1>System Logs</h1>
+</div>
+
+<p class="audit-note">
+    A permanent record of who did what, and when. You can search and filter it, but entries
+    cannot be edited or deleted by anyone.
+</p>
+
+<form method="get">
+    <div class="audit-filters">
+        <div>
+            <label for="From">From date</label>
+            <input type="date" id="From" name="From" class="admin-search" value="@(Model.From?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label for="To">To date</label>
+            <input type="date" id="To" name="To" class="admin-search" value="@(Model.To?.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div>
+            <label for="Person">Person (name or email)</label>
+            <input type="text" id="Person" name="Person" class="admin-search" value="@Model.Person" />
+        </div>
+        <div>
+            <label for="Role">Role</label>
+            <select id="Role" name="Role" class="admin-search">
+                <option value="">All</option>
+                @foreach (var option in Model.RoleOptions)
+                {
+                    <option value="@option" selected="@(Model.Role == option)">@option</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="ActionName">Action</label>
+            <select id="ActionName" name="ActionName" class="admin-search">
+                <option value="">All</option>
+                @foreach (var option in Model.ActionOptions)
+                {
+                    <option value="@option" selected="@(Model.ActionName == option)">@option</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="EntityType">Record type</label>
+            <select id="EntityType" name="EntityType" class="admin-search">
+                <option value="">All</option>
+                @foreach (var option in Model.EntityOptions)
+                {
+                    <option value="@option" selected="@(Model.EntityType == option)">@option</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="Source">Where from</label>
+            <select id="Source" name="Source" class="admin-search">
+                <option value="">All</option>
+                @foreach (var option in Model.SourceOptions)
+                {
+                    <option value="@option" selected="@(Model.Source == option)">@option</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="Search">Search the description</label>
+            <input type="text" id="Search" name="Search" class="admin-search" value="@Model.Search" />
+        </div>
+    </div>
+
+    <div class="audit-actions">
+        <button type="submit" class="admin-btn admin-btn-accent">Apply filters</button>
+        <a href="/Admin/AuditLog" class="admin-btn admin-btn-outline">Clear</a>
+    </div>
+</form>
+
+@if (Model.Entries.Count == 0)
+{
+    <div class="admin-empty">No log entries match these filters.</div>
+}
+else
+{
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>When</th>
+                <th>Who</th>
+                <th>Action</th>
+                <th>What happened</th>
+                <th>Where from</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.Entries)
+            {
+                var details = AuditLogModel.ReadDetails(entry.Details);
+                <tr>
+                    <td>@AuditLogModel.ToLocal(entry.OccurredAt).ToString("dd MMM yyyy HH:mm:ss")</td>
+                    <td class="audit-who">
+                        @(entry.ActorName ?? "-")
+                        <small>@entry.ActorType@(string.IsNullOrEmpty(entry.ActorEmail) ? "" : " · " + entry.ActorEmail)</small>
+                    </td>
+                    <td><span class="badge @AuditLogModel.BadgeFor(entry.Action)">@entry.Action</span></td>
+                    <td>
+                        @entry.Summary
+                        @if (details.Count > 0)
+                        {
+                            <details class="audit-details">
+                                <summary>Show details</summary>
+                                <table>
+                                    <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+                                    <tbody>
+                                        @foreach (var row in details)
+                                        {
+                                            <tr>
+                                                <td>@row.Field</td>
+                                                <td>@(row.Old ?? "-")</td>
+                                                <td>@row.New</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </details>
+                        }
+                    </td>
+                    <td>
+                        @entry.Source
+                        <small style="display:block;opacity:.7;">@entry.IpAddress</small>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="audit-pager">
+        @if (Model.PageNumber > 1)
+        {
+            <a href="@Model.PageUrl(Model.PageNumber - 1)">Previous</a>
+        }
+        <span>Page @Model.PageNumber of @Model.TotalPages (@Model.TotalCount entries)</span>
+        @if (Model.PageNumber < Model.TotalPages)
+        {
+            <a href="@Model.PageUrl(Model.PageNumber + 1)">Next</a>
+        }
+    </div>
+}

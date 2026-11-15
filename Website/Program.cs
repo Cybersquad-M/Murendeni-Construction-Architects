@@ -28,6 +28,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/Admin/EditEmployee", "AdminOnly");
     options.Conventions.AuthorizePage("/Admin/ManagePortfolio", "AdminOnly");
     options.Conventions.AuthorizePage("/Admin/Reports", "AdminOnly");
+    options.Conventions.AuthorizePage("/Admin/AuditLog", "AdminOnly"); // only admins may read the system log
 
     options.Conventions.AuthorizePage("/Admin/ManageClients", "SalesOrAdmin");
     options.Conventions.AuthorizePage("/Admin/EditClient", "SalesOrAdmin");
@@ -45,6 +46,9 @@ builder.Services.AddRazorPages(options =>
 // NEW (API): controllers for the REST API used by the mobile app.
 builder.Services.AddControllers();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddHttpContextAccessor();                 // lets the audit log see who is making a request
+builder.Services.AddScoped<AuditSaveChangesInterceptor>(); // logs every database change automatically
+builder.Services.AddScoped<AuditService>();                // logs logins, logouts and failed logins
 builder.Services.AddScoped<ExternalLoginService>(); // Google sign-in: matches a Google account to a Client/Employee
 
 // Azure App Service sits behind a proxy; this makes the Google redirect URI come out as https://.
@@ -157,14 +161,15 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 3,
             maxRetryDelay: TimeSpan.FromSeconds(10),
             errorNumbersToAdd: null);
-    }));
+    })
+    .AddInterceptors(serviceProvider.GetRequiredService<AuditSaveChangesInterceptor>()));
 
 var app = builder.Build();
 
@@ -182,6 +187,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 // Stops browsers from keeping copies of private pages, so the Back button
 // cannot show the dashboard after logout.
 app.Use(async (context, next) =>
@@ -201,6 +207,7 @@ app.Use(async (context, next) =>
     }
     await next();
 });
+
 app.UseRouting();
 
 // Authentication works out WHO the caller is; authorization decides WHAT they may open.
