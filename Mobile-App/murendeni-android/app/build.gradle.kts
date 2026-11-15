@@ -62,6 +62,11 @@ dependencies {
     // Scrolling list used for the projects.
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // Google sign-in: Credential Manager shows the Google account picker and returns an ID token.
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
     // A real JSON library for unit tests. The Android one is only an empty stub on a build machine.
     testImplementation("org.json:json:20240303")
 

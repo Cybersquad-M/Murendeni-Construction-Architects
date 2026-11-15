@@ -792,6 +792,10 @@
                                placeholder="Your phone number"
                                autocomplete="tel" />
 
+                        <span asp-validation-for="Input.Phone"
+                              class="field-validation-error">
+                        </span>
+
                     </div>
 
 
@@ -842,6 +846,10 @@
                         <span asp-validation-for="Input.Password"
                               class="field-validation-error">
                         </span>
+
+                        <small style="display:block;margin-top:6px;color:#9ba5b0;font-size:12px;">
+                            At least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.
+                        </small>
 
                     </div>
 

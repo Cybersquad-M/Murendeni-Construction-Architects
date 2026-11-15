@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MurendeniConstructionArchitects.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using MurendeniConstructionArchitects.Data;
@@ -18,12 +19,25 @@ public class ContactFormInput
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please enter your email.")]
-    [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+    [ValidEmail]
     [MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
+    public string Email
+    {
+        get => _email;
+        set => _email = InputRules.NormalizeEmail(value); // trims and lower-cases
+    }
 
+    private string _email = string.Empty;
+
+    [ValidPhone]
     [MaxLength(20)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get => _phone;
+        set => _phone = InputRules.NormalizePhone(value); // tidies spaces, 0821234567 -> +27821234567
+    }
+
+    private string? _phone;
 
     [MaxLength(100)]
     public string? Service { get; set; }

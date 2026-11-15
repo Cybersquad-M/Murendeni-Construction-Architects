@@ -15,6 +15,11 @@ data class RegisterRequest(
     val password: String
 )
 
+// Sent to the website after the user picks a Google account on the phone.
+data class GoogleLoginRequest(
+    val idToken: String
+)
+
 data class AuthResponse(
     val token: String,
     val userId: Int,

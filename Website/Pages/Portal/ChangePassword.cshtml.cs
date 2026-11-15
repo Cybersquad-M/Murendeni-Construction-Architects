@@ -14,7 +14,7 @@ public class ChangePasswordInput
     public string CurrentPassword { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please enter a new password.")]
-    [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
+    [StrongPassword]
     public string NewPassword { get; set; } = string.Empty;
 
     [Required]

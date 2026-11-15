@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MurendeniConstructionArchitects.Helpers;
 
 namespace MurendeniConstructionArchitects.Api.Dtos;
 
@@ -17,8 +18,15 @@ public class UpdateAccountRequest
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
+    [ValidPhone]
     [MaxLength(20)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get => _phone;
+        set => _phone = InputRules.NormalizePhone(value); // tidies spaces, 0821234567 -> +27821234567
+    }
+
+    private string? _phone;
 }
 
 // Data the app sends to change a password.
@@ -27,6 +35,6 @@ public class ChangePasswordRequest
     [Required]
     public string CurrentPassword { get; set; } = string.Empty;
 
-    [Required, MinLength(8)]
+    [Required, StrongPassword]
     public string NewPassword { get; set; } = string.Empty;
 }

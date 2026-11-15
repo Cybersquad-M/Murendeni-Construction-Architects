@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MurendeniConstructionArchitects.Helpers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +13,14 @@ public class EditEmployeeInput
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
-    [Required, EmailAddress, MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
+    [Required, ValidEmail, MaxLength(255)]
+    public string Email
+    {
+        get => _email;
+        set => _email = InputRules.NormalizeEmail(value); // trims and lower-cases
+    }
+
+    private string _email = string.Empty;
 
     public EmployeeRole Role { get; set; }
 }

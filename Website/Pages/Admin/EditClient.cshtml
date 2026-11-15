@@ -29,6 +29,7 @@
     <div class="admin-form-field">
         <label asp-for="Input.Phone">Phone</label>
         <input asp-for="Input.Phone" />
+        <span asp-validation-for="Input.Phone"></span>
     </div>
 
     <button type="submit" class="admin-btn admin-btn-accent">Save Changes</button>

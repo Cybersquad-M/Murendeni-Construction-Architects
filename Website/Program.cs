@@ -182,6 +182,25 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+// Stops browsers from keeping copies of private pages, so the Back button
+// cannot show the dashboard after logout.
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if (path.StartsWithSegments("/Portal") ||
+        path.StartsWithSegments("/Admin") ||
+        path.StartsWithSegments("/Account"))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+            context.Response.Headers.Pragma = "no-cache";
+            context.Response.Headers.Expires = "0";
+            return Task.CompletedTask;
+        });
+    }
+    await next();
+});
 app.UseRouting();
 
 // Authentication works out WHO the caller is; authorization decides WHAT they may open.

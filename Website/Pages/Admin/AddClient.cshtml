@@ -32,11 +32,13 @@
     <div class="admin-form-field">
         <label asp-for="Input.Phone">Phone</label>
         <input asp-for="Input.Phone" />
+        <span asp-validation-for="Input.Phone"></span>
     </div>
 
     <div class="admin-form-field">
         <label asp-for="Input.TemporaryPassword">Temporary Password (optional)</label>
         <input asp-for="Input.TemporaryPassword" placeholder="Leave blank to auto-generate" />
+        <span asp-validation-for="Input.TemporaryPassword"></span>
     </div>
 
     <button type="submit" class="admin-btn admin-btn-accent">Add Client</button>

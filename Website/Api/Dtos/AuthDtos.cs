@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using MurendeniConstructionArchitects.Helpers;
 
 namespace MurendeniConstructionArchitects.Api.Dtos;
 
 // Data the app sends to log in.
+// Login is deliberately NOT given the new password rules, so existing accounts can still sign in.
 public class LoginRequest
 {
     [Required, EmailAddress]
@@ -18,13 +20,26 @@ public class RegisterRequest
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
-    [Required, EmailAddress, MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
+    [Required, ValidEmail, MaxLength(255)]
+    public string Email
+    {
+        get => _email;
+        set => _email = InputRules.NormalizeEmail(value); // trims and lower-cases
+    }
 
+    private string _email = string.Empty;
+
+    [ValidPhone]
     [MaxLength(20)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get => _phone;
+        set => _phone = InputRules.NormalizePhone(value); // tidies spaces, 0821234567 -> +27821234567
+    }
 
-    [Required, MinLength(8)]
+    private string? _phone;
+
+    [Required, StrongPassword]
     public string Password { get; set; } = string.Empty;
 }
 

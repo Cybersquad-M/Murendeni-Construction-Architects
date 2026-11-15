@@ -40,6 +40,7 @@
     <div class="admin-form-field">
         <label asp-for="Input.TemporaryPassword">Temporary Password (optional)</label>
         <input asp-for="Input.TemporaryPassword" placeholder="Leave blank to auto-generate" />
+        <span asp-validation-for="Input.TemporaryPassword"></span>
     </div>
 
     <button type="submit" class="admin-btn admin-btn-accent">Add Employee</button>

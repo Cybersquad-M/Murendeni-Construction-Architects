@@ -74,5 +74,12 @@
     </div>
 
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+            // If the browser restores this page from its back/forward cache, reload it
+            // so the server checks the login again.
+            window.addEventListener("pageshow", function (e) {
+                if (e.persisted) { window.location.reload(); }
+            });
+    </script>
 </body>
 </html>

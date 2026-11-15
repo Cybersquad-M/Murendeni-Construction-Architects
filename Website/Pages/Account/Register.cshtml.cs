@@ -18,15 +18,28 @@ public class RegisterInput
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please enter your email.")]
-    [EmailAddress]
+    [ValidEmail]
     [MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
+    public string Email
+    {
+        get => _email;
+        set => _email = InputRules.NormalizeEmail(value); // trims and lower-cases
+    }
 
+    private string _email = string.Empty;
+
+    [ValidPhone]
     [MaxLength(20)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get => _phone;
+        set => _phone = InputRules.NormalizePhone(value); // tidies spaces, 0821234567 -> +27821234567
+    }
+
+    private string? _phone;
 
     [Required(ErrorMessage = "Please choose a password.")]
-    [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
+    [StrongPassword]
     public string Password { get; set; } = string.Empty;
 
     [Required]

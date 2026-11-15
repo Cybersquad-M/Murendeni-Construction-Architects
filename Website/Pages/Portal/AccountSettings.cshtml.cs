@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using MurendeniConstructionArchitects.Helpers;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -13,8 +14,15 @@ public class ProfileInput
     [MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
+    [ValidPhone]
     [MaxLength(20)]
-    public string? Phone { get; set; }
+    public string? Phone
+    {
+        get => _phone;
+        set => _phone = InputRules.NormalizePhone(value); // tidies spaces, 0821234567 -> +27821234567
+    }
+
+    private string? _phone;
 }
 
 public class AccountSettingsModel : PageModel

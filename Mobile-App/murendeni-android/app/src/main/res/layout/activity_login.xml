@@ -126,6 +126,24 @@
                         android:visibility="gone" />
 
                     <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center"
+                        android:text="or"
+                        android:textColor="#6B7280"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGoogle"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="12dp"
+                        android:text="Continue with Google"
+                        android:textColor="@color/brand_ink" />
+
+                    <TextView
                         android:id="@+id/tvRegisterLink"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
